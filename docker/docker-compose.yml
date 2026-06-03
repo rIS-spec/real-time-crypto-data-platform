@@ -1,0 +1,176 @@
+# docker-compose.yml
+# This file defines ALL the services your project needs.
+# Run everything with: docker-compose up -d
+# Stop everything with: docker-compose down
+
+# NETWORKS
+# Think of this as a private Wi-Fi network just
+# for your containers. They can talk to each other
+# using service names (e.g. "postgres", "kafka")
+# instead of IP addresses.
+networks:
+  data_platform_net:
+    driver: bridge   # Standard network type for local development
+
+
+# VOLUMES
+# Containers forget everything when stopped.
+# Volumes save data to your actual hard drive.
+# Without this, your PostgreSQL data is gone on restart.
+volumes:
+  postgres_data:    # Stores PostgreSQL database files
+  airflow_logs:     # Stores Airflow task logs
+
+
+# SERVICES
+# Each block below = one container (one "room" in your factory)
+services:
+
+  # 1. POSTGRESQL — Your data warehouse
+  # Stores all processed analytics data.
+  # You connect to this from Python using psycopg2 or SQLAlchemy.
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - data_platform_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arish -d data_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ───────────────────────────────────────────
+  # 2. ZOOKEEPER — Kafka's manager
+  # Kafka REQUIRES Zookeeper to run.
+  # Zookeeper tracks which Kafka brokers are alive.
+  # You never interact with Zookeeper directly in code.
+  # ───────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0  # Confluent's production-grade Zookeeper
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181   # Port Kafka uses to talk to Zookeeper
+      ZOOKEEPER_TICK_TIME: 2000     # Heartbeat interval in milliseconds
+    ports:
+      - "2181:2181"
+    networks:
+      - data_platform_net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # 3. KAFKA — Your streaming conveyor belt
+  # Receives events from your producer.py
+  # and delivers them to your consumer.py.
+  # Must start AFTER Zookeeper (see depends_on).
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0  # Same version family as Zookeeper
+    container_name: kafka_broker
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy   # Wait for Zookeeper to be healthy first then start Kafka 
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181   # "zookeeper" = the service name above
+      # Two listeners: one for inside Docker network, one for your laptop
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1   # 1 = fine for local dev, use 3 in prod
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"      # Topics created automatically when used
+    ports:
+      - "9092:9092"   # Your Python producer/consumer connects to localhost:9092
+    networks:
+      - data_platform_net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+
+  # 4. KAFKA UI — Visual dashboard for Kafka
+  # Optional but VERY useful for debugging.
+  # See your topics, messages, consumer groups
+  # at http://localhost:8090 in your browser.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka_ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy   # Wait for Kafka to be healthy first then start Kafka UI 
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092   # Internal Docker network address
+    ports:
+      - "8090:8080"   # Access at http://localhost:8090
+    networks:
+      - data_platform_net
+
+
+
+  # 5. APACHE AIRFLOW — Your pipeline scheduler
+  # Runs your DAGs on schedule.
+  # Access the UI at http://localhost:8080
+  # Default login: admin / admin
+  airflow:
+    image: apache/airflow:2.8.0
+    container_name: airflow
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy   # Airflow stores its metadata in PostgreSQL database then starts up 
+    environment:
+      AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
+      AIRFLOW__SMTP__SMTP_USER: arishmahammad8@gmail.com
+      AIRFLOW__SMTP__SMTP_PASSWORD: lbwcsttdvrhjgnql
+      AIRFLOW__SMTP__SMTP_PORT: 587
+      AIRFLOW__SMTP__SMTP_MAIL_FROM: your_gmail@gmail.com
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://arish:Arish200502@postgres/data_platform
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'   # Hides the built-in example DAGs
+      AIRFLOW__CORE__PARALLELISM: '32'      # Maximum 32 tasks running simultaneously across all DAGs in entire Airflow
+      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: '3'   # Maximum 3 runs of the same DAG running simultaneously — prevents overlap
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: '16'   # Maximum 16 tasks running simultaneously within one DAG run
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    volumes:
+      - ./airflow_dags:/opt/airflow/dags  # Airflow looks for your DAGs here on your local machine 
+      - airflow_logs:/opt/airflow/logs
+      - ./airflow_start.sh:/airflow_start.sh
+    ports:
+      - "8080:8080"
+    command: bash /airflow_start.sh
+    networks:
+      - data_platform_net
+
+
+
+# HOW TO USE THIS FILE
+
+# Start all services:       docker-compose up -d
+# Check status:             docker-compose ps
+# View logs of one service: docker-compose logs kafka
+# Stop all services:        docker-compose down
+# Stop + delete all data:   docker-compose down -v   <- WARNING: deletes DB data
+#
+# After running up -d, wait ~30 seconds then open:
+#   PostgreSQL:  connect via DBeaver at localhost:5432
+#   Kafka UI:    http://localhost:8090
+#   Airflow UI:  http://localhost:8080  (login: admin / admin)
