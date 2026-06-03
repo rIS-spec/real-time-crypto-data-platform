@@ -1,0 +1,6 @@
+$env:JAVA_TOOL_OPTIONS = "-Duser.timezone=UTC"
+$env:HADOOP_HOME = "C:\hadoop"
+$env:PATH = "$env:PATH;C:\hadoop\bin"
+$env:PYTHONPATH = "D:\Desktop\real-time-data-platform"
+$env:PYSPARK_PYTHON = "D:\Desktop\real-time-data-platform\venv\Scripts\python.exe"
+$env:PYSPARK_DRIVER_PYTHON = "D:\Desktop\real-time-data-platform\venv\Scripts\python.exe"
