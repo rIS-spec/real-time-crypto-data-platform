@@ -6,13 +6,13 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings):    # basesettings means we can use env vars as settings
 
     # PostgreSQL
-    POSTGRES_USER: str = "arish"
-    POSTGRES_PASSWORD: str = "Arish200502"
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = "data_platform"
-    POSTGRES_URL: str = "postgresql://arish:Arish200502@localhost:5432/data_platform"
+    POSTGRES_URL: str = ""
 
     # Kafka
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
             raise ValueError(f"POSTGRES_URL must contain database: {self.POSTGRES_DB}")
         return self
 
-
+    # Read .env file automatically if it exists
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
