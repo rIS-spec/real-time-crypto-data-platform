@@ -31,6 +31,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
+from api_service.config import get_settings
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +48,9 @@ spark = SparkSession.builder \
 spark.sparkContext.setLogLevel("WARN")
 logger.info("Spark Session created — CryptoStreamToPostgres")
 
+
+
+settings = get_settings()
 
 
 # step 2 — Define Schema
@@ -99,8 +103,8 @@ def write_to_postgres(batch_df, batch_id):
         .format("jdbc") \
         .option("url", "jdbc:postgresql://localhost:5432/data_platform") \
         .option("dbtable", "streaming_results") \
-        .option("user", "arish") \
-        .option("password", "Arish200502") \
+        .option("user", settings.POSTGRES_USER) \
+        .option("password", settings.POSTGRES_PASSWORD) \
         .option("driver", "org.postgresql.Driver") \
         .mode("append") \
         .save()
