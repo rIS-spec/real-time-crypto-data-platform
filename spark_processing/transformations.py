@@ -22,6 +22,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+settings = get_settings()
+
 
 
 # Execution Order:
@@ -128,8 +130,8 @@ def add_price_category(df):
 def write_aggregations_to_postgres(avg_df):
     url = "jdbc:postgresql://localhost:5432/data_platform"
     properties = {
-        "user": "arish",
-        "password": "Arish200502",
+        "user": settings.POSTGRES_USER,
+        "password": settings.POSTGRES_PASSWORD,
         "driver": "org.postgresql.Driver"
     }
     avg_df.write.jdbc(
@@ -169,8 +171,6 @@ if __name__ == "__main__":
 
     # Step 1 — Start Spark engine
     spark = create_spark_session()
-
-    settings = get_settings()
 
     # Step 2 — Pull all rows from PostgreSQL into DataFrame
     df = read_crypto_from_postgres(spark)

@@ -6,3 +6,11 @@ __pycache__/
 docker/
 *.md
 .streamlit/secrets.toml
+spark_processing/revision_day23.py
+spark_processing/revision_day24.py
+spark_processing/revision_day25.py
+spark_processing/revision_day26.py
+spark_processing/revision_day27.py
+spark_processing/revision_day28.py
+spark_processing/spark_sql_demo.py
+spark_processing/performance_demo.py
