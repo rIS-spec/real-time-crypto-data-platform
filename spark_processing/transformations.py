@@ -16,6 +16,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+from api_service.config import get_settings
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -56,8 +57,8 @@ def read_crypto_from_postgres(spark: SparkSession):
 
     # Credentials — same as config.py and docker-compose.yml
     properties = {
-        "user": "arish",
-        "password": "Arish200502",
+        "user": settings.POSTGRES_USER,
+        "password": settings.POSTGRES_PASSWORD,
         "driver": "org.postgresql.Driver",
         "options": "-c TimeZone=UTC"
     }
@@ -168,6 +169,8 @@ if __name__ == "__main__":
 
     # Step 1 — Start Spark engine
     spark = create_spark_session()
+
+    settings = get_settings()
 
     # Step 2 — Pull all rows from PostgreSQL into DataFrame
     df = read_crypto_from_postgres(spark)
