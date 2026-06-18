@@ -48,8 +48,9 @@ def main_pipeline():
     @task
     # Step 2 — log_status(row_count)
     def log_status(row_count):
-        import psycopg2
-        conn = psycopg2.connect("postgresql://arish:Arish200502@postgres:5432/data_platform")
+        from airflow.providers.postgres.hooks.postgres import PostgresHook
+        hook = PostgresHook(postgres_conn_id='crypto_postgres')
+        conn = hook.get_conn()
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO pipeline_logs (pipeline_name, task_name, status, rows_processed)

@@ -150,9 +150,9 @@ def log_pipeline_status(**context):
     # DRY RUN: xcom_pull looks up XCom for task 'fetch_crypto_prices' in this DAG run
     # rows = 5 (the return value of fetch_crypto_prices)
 
-    import psycopg2
-    # Direct psycopg2 here (not Hook) — acceptable for simple logging task
-    conn = psycopg2.connect("postgresql://arish:Arish200502@postgres:5432/data_platform")
+    from airflow.providers.postgres.hooks.postgres import PostgresHook
+    hook = PostgresHook(postgres_conn_id='crypto_postgres')
+    conn = hook.get_conn()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO pipeline_logs (pipeline_name, task_name, status, rows_processed)
