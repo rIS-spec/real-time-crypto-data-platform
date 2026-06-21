@@ -64,7 +64,7 @@ schema = StructType([     # Define the shape of JSON coming from Kafka — like 
 
 
 
-# step 3 — Read from Kafka (readStream) 
+# step 3 — Read from Kafka (readStream)
 raw_stream = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "localhost:9092") \

@@ -21,7 +21,7 @@ from pyspark.sql.types import StructType, StructField, StringType, FloatType, Ti
 
 
 
-# step 1 — Create SparkSession
+# step 1 — Create SparkSession - becoz Spark needs to be started with Kafka support enabled to read from Kafka topic live and write to console live or to PostgreSQL.
 spark = SparkSession.builder \
     .appName("CryptoStreaming") \
     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.0") \

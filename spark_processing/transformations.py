@@ -49,6 +49,7 @@ def create_spark_session() -> SparkSession:
     return spark
 
 
+
 # Load data
 # Read from PostgreSQL
 # SQL equivalent: SELECT * FROM crypto_events
@@ -124,7 +125,7 @@ def add_price_category(df):
 # Save
 # Write Results to PostgreSQL
 # Saves aggregated results permanently to crypto_aggregations table
-# mode=overwrite — replaces old aggregation with fresh one every run
+# mode=overwrite — replaces old aggregation with fresh one every run because it's LATEST aggregation
 # Why overwrite not append? Dashboard only needs LATEST aggregation
 # Analogy: updating a scoreboard — replace old scores, not stack them
 def write_aggregations_to_postgres(avg_df):
@@ -194,6 +195,21 @@ if __name__ == "__main__":
 
     # Step 7 — Shut down Spark cleanly
     spark.stop()
+
+
+
+
+# CoinGecko → producer.py → Kafka topic (crypto-events)
+#                               │
+#                 ┌─────────────┴─────────────┐
+#                 ↓                           ↓
+#           consumer.py              spark_stream_pg.py
+#                 ↓                           ↓
+#         crypto_events table        streaming_results table
+#                 ↓
+#         transformations.py (reads crypto_events)
+#                 ↓
+#         crypto_aggregations table
 
 
 

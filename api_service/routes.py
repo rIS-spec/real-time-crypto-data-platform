@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-router = APIRouter(prefix="/crypto", tags=["Crypto"])
+router = APIRouter(prefix="/crypto", tags=["Crypto"])   # /crypto/prices = endpoint for live prices
 
 
 @router.get("/health")
@@ -46,7 +46,8 @@ def get_live_prices():
     except Exception as e:
         logger.error(f"Failed to fetch live prices: {e}")
         raise HTTPException(status_code=503, detail=str(e))
-    
+
+
 
 @router.get("/prices/history")
 def get_price_history(coin: str = "bitcoin", limit: int = 10):
@@ -80,6 +81,7 @@ def get_price_history(coin: str = "bitcoin", limit: int = 10):
     except Exception as e:
         logger.error(f"Failed to fetch history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @router.get("/prices/{coin_id}")

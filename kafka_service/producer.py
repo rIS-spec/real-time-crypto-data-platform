@@ -14,7 +14,6 @@ from api_service.config import get_settings
 
 import json  # json.dumps() = converts Python dict to JSON
 import logging 
-
 import time
 
 logger = logging.getLogger(__name__)
@@ -31,7 +30,7 @@ settings = get_settings()
 
 def create_producer():
     return KafkaProducer(
-        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,     # Address of Kafka broker. In this case, localhost:9092 is the broker
         # Convert Python dict → JSON → bytes (Kafka required format)
         value_serializer=lambda x: json.dumps(x).encode('utf-8'),  # Serializer = convert Python data → bytes (to send to Kafka)
         key_serializer=lambda x: x.encode('utf-8') if x else None,

@@ -1,5 +1,5 @@
 
-# Producer configs → sending logic
+# Producer configs → sending logic to Kafka topic
 # Consumer configs → reading logic,
 #            and saves to PostgreSQL
 
@@ -40,14 +40,14 @@ def create_consumer():
           # Deserializer = convert bytes → Python data (after receiving from Kafka)
 
         # Consumer group (scalability)
-        group_id="crypto-group-3",
+        group_id="crypto-group-3",    #  Name of consumer group. All consumers with same group_id share the work. Kafka assigns partitions among them.
 
         # bookmark → never lose your place
-        auto_offset_reset="earliest",
+        auto_offset_reset="earliest",    # start reading from the beginning of the topic if no offset is found in the consumer group
 
         # Auto save progress
         enable_auto_commit=False,  # it false becoz we want to commit manually 
-        consumer_timeout_ms=-1
+        consumer_timeout_ms=-1    # Never stop waiting. Consumer runs forever, always listening for new messages. 
     )
 
 
@@ -61,6 +61,7 @@ def create_db_connection():   # connect with database.
         raise
 
 
+# Create consumer and connect to DB and start listening 
 def consume_crypto_from_kafka():
     try:
         consumer = create_consumer()
@@ -123,6 +124,9 @@ if __name__ == "__main__":
 
 
 
+
+
+
 # Run file
 #    ↓
 # Create Kafka consumer (connect to Kafka)
@@ -142,10 +146,6 @@ if __name__ == "__main__":
 # If success → commit
 #    ↓
 # Repeat forever
-
-
-
-
 
 
 
