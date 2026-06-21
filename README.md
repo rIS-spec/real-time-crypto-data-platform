@@ -193,4 +193,4 @@ Next Plan to make Data Lake Kind of Projects.
 
 ## Contact
 
-Email: arishmahammad8@200502    |    Linkedin: www.linkedin.com/in/arishmahammad
+Email: arishmahammad8@gmail.com    |    Linkedin: www.linkedin.com/in/arishmahammad
