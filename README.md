@@ -16,42 +16,42 @@ Most "crypto dashboard" tutorials stop at calling an API and plotting a chart. T
 
 ```
                      ┌─────────────────┐
-                     │   CoinGecko API  │
+                     │   CoinGecko API │
+                     └────────┬────────┘
+                              │
+                     ┌────────▼─────────┐
+                     │     FastAPI      │  (api_service/)
+                     │  fetch + validate│
                      └────────┬─────────┘
                               │
                      ┌────────▼─────────┐
-                     │     FastAPI       │  (api_service/)
-                     │  fetch + validate │
+                     │   Kafka Producer │  (kafka_service/producer.py)
                      └────────┬─────────┘
                               │
                      ┌────────▼─────────┐
-                     │   Kafka Producer  │  (kafka_service/producer.py)
-                     └────────┬─────────┘
-                              │
-                     ┌────────▼─────────┐
-                     │  Kafka Topic       │
-                     │  "crypto-events"   │
-                     └────┬─────────┬────┘
+                     │  Kafka Topic     │
+                     │  "crypto-events" │
+                     └────┬─────────┬───┘
                           │         │
               ┌───────────▼──┐  ┌───▼─────────────────┐
-              │ Kafka Consumer│  │ Spark Structured     │
-              │ (Python)      │  │ Streaming             │
-              └───────┬───────┘  └──────────┬───────────┘
+              │ Kafka Consumer│  │ Spark Structured   │
+              │ (Python)      │  │ Streaming          │
+              └───────┬───────┘  └──────────┬─────────┘
                       │                     │
               ┌───────▼───────┐   ┌─────────▼─────────┐
-              │ crypto_events  │   │ streaming_results   │
-              │ (PostgreSQL)   │   │ (PostgreSQL)         │
-              └───────┬───────┘   └────────────────────┘
+              │ crypto_events │   │ streaming_results │
+              │ (PostgreSQL)  │   │ (PostgreSQL)      │
+              └───────┬───────┘   └───────────────────┘
                       │
               ┌───────▼───────────┐
-              │ PySpark Batch Jobs │  (spark_processing/transformations.py)
-              │ filter, groupBy,   │
-              │ window functions   │
+              │ PySpark Batch Jobs│  (spark_processing/transformations.py)
+              │ filter, groupBy,  │
+              │ window functions  │
               └───────┬───────────┘
                       │
               ┌───────▼───────────┐
               │ crypto_aggregations│
-              │ (PostgreSQL)        │
+              │ (PostgreSQL)       │
               └───────┬───────────┘
                       │
        ┌──────────────┼──────────────┐
