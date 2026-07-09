@@ -1,14 +1,13 @@
-cat > /mnt/user-data/outputs/README.md << 'README'
 # Real-Time Crypto Data Platform
 
-> A production-grade, end-to-end real-time data engineering platform that ingests live cryptocurrency prices for 5 coins, streams events through Apache Kafka, transforms data with PySpark, orchestrates pipelines via Airflow, detects anomalies using Isolation Forest ML, and serves insights through a live Streamlit dashboard — fully deployed on AWS EC2.
+> A production-grade, end-to-end real-time data engineering platform that ingests live cryptocurrency prices for 5 coins, streams events through Apache Kafka, transforms data with PySpark, orchestrates pipelines via Airflow, detects anomalies using Isolation Forest ML and serves insights through a live Streamlit dashboard — fully deployed on AWS EC2.
 
 **Live Demo:**
 - 🚀 API: [http://3.108.53.215:8001/docs](http://3.108.53.215:8001/docs)
 - 📊 Dashboard: [http://3.108.53.215:8501](http://3.108.53.215:8501)
 
 **GitHub:** [github.com/rIS-spec/real-time-crypto-data-platform](https://github.com/rIS-spec/real-time-crypto-data-platform)
-
+Now I did terminate EC2 Instance.
 ---
 
 ## Table of Contents
@@ -414,7 +413,7 @@ s3 = boto3.client('s3', region_name='ap-south-1')
 - Enabled Block All Public Access
 
 **Why this folder structure:**
-This follows the Data Lake pattern used at Amazon, Flipkart, and JP Morgan:
+This follows the Data Lake pattern used at Amazon, Flipkart and JP Morgan:
 - `raw/` — Data exactly as received from CoinGecko. Never modified. Source of truth.
 - `processed/` — Data after PySpark transformations. Ready for analytics.
 - `logs/` — Pipeline execution records for debugging and auditing.
@@ -433,7 +432,7 @@ Crypto price data and pipeline logs should never be publicly accessible. Only au
 - Created security group `crypto-rds-sg` with inbound rules for EC2 IP and laptop IP
 
 **Why RDS instead of PostgreSQL on EC2:**
-RDS is a managed service — AWS handles backups, patching, and availability automatically. Running PostgreSQL directly on EC2 requires manual maintenance, which is impractical in production. RDS also provides point-in-time recovery which is critical for financial data.
+RDS is a managed service — AWS handles backups, patching and availability automatically. Running PostgreSQL directly on EC2 requires manual maintenance, which is impractical in production. RDS also provides point-in-time recovery which is critical for financial data.
 
 **Why separate security group for RDS:**
 The security group acts as a firewall — only my EC2 instance (IP: 172.31.2.68) and my laptop can connect to RDS on port 5432. This follows the principle of least privilege.
@@ -746,10 +745,7 @@ IsolationForest(
 
 ---
 
-## Author
-
-**Arish Mahammad**
-B.Tech CSE Data Science — IEM New Town, Kolkata (2024–2028)
+## Author - Arish
 
 - Email: arishmahammad8@gmail.com
 - LinkedIn: [linkedin.com/in/arishmahammad](https://linkedin.com/in/arishmahammad)
@@ -757,6 +753,4 @@ B.Tech CSE Data Science — IEM New Town, Kolkata (2024–2028)
 
 ---
 
-*Built as a portfolio project targeting Data Engineer and ML Engineer roles at Amazon, Microsoft, Flipkart, Walmart, and JP Morgan for 2027 placements.*
-README
-echo "README created!"
+*Built as a portfolio project targeting Data Engineer and ML Engineer roles at Amazon, Microsoft, Flipkart, Walmart and JP Morgan for 2027 placements.*
