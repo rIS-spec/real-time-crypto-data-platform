@@ -17,14 +17,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# ── DATASET DEFINITION ──────────────────────────────────────
+# DATASET DEFINITION 
 # URI is just a label — must be IDENTICAL in analytics_dag.py
 # When save_prices_to_db succeeds → this dataset is marked updated
 # → analytics_dag triggers automatically (event-driven)
 crypto_dataset = Dataset("postgres://data_platform/crypto_events")
 
 
-# ── FUNCTION 1: alert_on_failure ────────────────────────────
+# FUNCTION 1: alert_on_failure 
 # Called automatically by Airflow when ANY task fails
 # context = Airflow passes this automatically — contains task info
 def alert_on_failure(context):
@@ -38,7 +38,7 @@ def alert_on_failure(context):
     # This log appears in Airflow UI → task logs → red ERROR line
 
 
-# ── FUNCTION 2: fetch_crypto_prices ─────────────────────────
+# FUNCTION 2: fetch_crypto_prices
 # Fetches ALL 5 coins together — returns count for XCom
 # Used by log_pipeline_status to know how many rows were processed
 def fetch_crypto_prices():
@@ -61,7 +61,7 @@ def fetch_crypto_prices():
         raise  # re-raises so Airflow marks task FAILED and triggers retry
 
 
-# ── FUNCTION 3: fetch_one_coin ───────────────────────────────
+# FUNCTION 3: fetch_one_coin 
 # Fetches price for exactly ONE coin — called by dynamic tasks
 # coin_id comes from op_args=[coin] in the PythonOperator loop
 def fetch_one_coin(coin_id: str):
@@ -91,7 +91,7 @@ def fetch_one_coin(coin_id: str):
     # RETURNS: 77063.0 — stored in XCom for this task instance
 
 
-# ── FUNCTION 4: save_prices_to_db ───────────────────────────
+# FUNCTION 4: save_prices_to_db
 # Saves ALL 5 coins to PostgreSQL using PostgresHook
 # Runs AFTER all 5 fetch tasks complete
 # Uses ON CONFLICT DO NOTHING for idempotency
@@ -142,7 +142,7 @@ def save_prices_to_db(**context):
     # OUTPUT: INFO - Saved 5 coins to PostgreSQL
 
 
-# ── FUNCTION 5: log_pipeline_status ─────────────────────────
+# FUNCTION 5: log_pipeline_status
 # Logs every pipeline run to pipeline_logs table
 # Pulls row count from XCom (set by fetch_crypto_prices)
 def log_pipeline_status(**context):
@@ -165,7 +165,7 @@ def log_pipeline_status(**context):
     # OUTPUT: INFO - Pipeline log saved to PostgreSQL successfully
 
 
-# ── DAG DEFINITION ──────────────────────────────────────────
+# DAG DEFINITION
 with DAG(
     dag_id="crypto_ingest_dag",        # unique name shown in Airflow UI
     start_date=datetime(2026, 5, 14),  # DAG won't run before this date
@@ -185,7 +185,7 @@ with DAG(
     tags=["crypto", "ingest"],  # filter tags in Airflow UI
 ) as dag:
 
-    # ── TASK 1: HttpSensor ───────────────────────────────────
+    # TASK 1: HttpSensor 
     # DRY RUN: Airflow calls GET https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin
     # Every 30 seconds until HTTP 200 received or 300 seconds timeout
     check_api = HttpSensor(
@@ -202,7 +202,7 @@ with DAG(
     # DRY RUN RESULT: HTTP 200 → sensor passes → pipeline continues
     # If CoinGecko down: sensor keeps poking every 30s → after 300s → FAILED → retry
 
-    # ── TASK 2: FileSensor ───────────────────────────────────
+    # TASK 2: FileSensor
     # DRY RUN: checks if /opt/airflow/dags/data/crypto_input.csv exists
     # Every 30 seconds until file found or 300 seconds timeout
     check_file = FileSensor(
@@ -215,7 +215,7 @@ with DAG(
     )
     # DRY RUN RESULT: file exists → sensor passes → pipeline continues
 
-    # ── TASKS 3-7: Dynamic PythonOperators (5 coins) ────────
+    # TASKS 3-7: Dynamic PythonOperators (5 coins)
     # Loop creates 5 separate tasks automatically
     coins = ['bitcoin', 'ethereum', 'solana', 'dogecoin', 'ripple']
     fetch_tasks = []
@@ -231,7 +231,7 @@ with DAG(
     # After loop: fetch_tasks = [fetch_bitcoin_task, fetch_ethereum_task, ...]
     # All 5 run IN PARALLEL after check_file succeeds
 
-    # ── TASK 8: save_prices_to_db ────────────────────────────
+    # TASK 8: save_prices_to_db
     # Waits for ALL 5 fetch tasks to finish
     # outlets=[crypto_dataset] → after success, analytics_dag triggers
     save_task = PythonOperator(
@@ -243,7 +243,7 @@ with DAG(
         # analytics_dag sees update → triggers automatically
     )
 
-    # ── TASK 9: SqlSensor ────────────────────────────────────
+    # TASK 9: SqlSensor 
     # Verifies data actually landed in the database
     # DRY RUN: runs SELECT 1 FROM crypto_events LIMIT 1
     # If returns row → sensor passes. If empty → keeps poking
@@ -256,7 +256,7 @@ with DAG(
     )
     # DRY RUN RESULT: returns 1 row → sensor passes → pipeline continues
 
-    # ── TASK 10: log_pipeline_status ─────────────────────────
+    # TASK 10: log_pipeline_status 
     # Records this pipeline run in pipeline_logs table
     log_status = PythonOperator(
         task_id="log_pipeline_status",
@@ -265,7 +265,7 @@ with DAG(
         # provide_context=True passes Airflow context (XCom, run info) to function
     )
 
-    # ── PIPELINE SEQUENCE ────────────────────────────────────
+    # PIPELINE SEQUENCE
     # DRY RUN of full flow:
     # 1. check_coingecko_api → GET CoinGecko → HTTP 200 → PASS
     # 2. check_input_file → file exists → PASS
@@ -280,106 +280,3 @@ with DAG(
     check_api >> check_file >> fetch_tasks >> save_task >> check_db >> log_status
 
 
-
-
-
-
-# AIRFLOW SCHEDULER
-#       |
-#       | (every hour — schedule_interval="0 * * * *")
-#       ↓
-# crypto_ingest_dag    ← your DAG
-#       |
-#       ↓
-# check_coingecko_api  ← Task 1 (HttpSensor)
-# - GET https://api.coingecko.com/api/v3/coins/markets?ids=bitcoin
-# - pokes every 30 seconds
-# - HTTP 200 received → PASS
-# - CoinGecko down → retry every 30s → timeout 300s → FAILED
-#       |
-#       ↓
-# check_input_file     ← Task 2 (FileSensor)
-# - checks /opt/airflow/dags/data/crypto_input.csv exists
-# - pokes every 30 seconds
-# - file found → PASS
-# - file missing → retry every 30s → timeout 300s → FAILED
-#       |
-#       ↓
-# ┌─────────────────────────────────────────┐
-# │  fetch_bitcoin   fetch_ethereum         │  ← Tasks 3-7
-# │  fetch_solana    fetch_dogecoin         │  (5 PythonOperators)
-# │  fetch_ripple                           │  ALL RUN IN PARALLEL
-# │                                         │
-# │  each calls fetch_one_coin(coin_id)     │
-# │  each hits CoinGecko for ONE coin only  │
-# │  fetch_bitcoin  → returns 77063.0       │
-# │  fetch_ethereum → returns 2121.1        │
-# │  fetch_solana   → returns 84.58         │
-# │  fetch_dogecoin → returns 0.10          │
-# │  fetch_ripple   → returns 1.36          │
-# │                                         │
-# │  if fetch_bitcoin fails → only bitcoin  │
-# │  fails, other 4 still succeed           │
-# └─────────────────────────────────────────┘
-#       |
-#       | (all 5 fetch tasks must finish before next step)
-#       ↓
-# save_prices_to_db    ← Task 8 (PythonOperator)
-# - connects to PostgreSQL via PostgresHook (crypto_postgres)
-# - no hardcoded password — reads from Airflow UI connection
-# - fetches all 5 coins via fetch_crypto()
-# - loops through each coin:
-#     INSERT INTO crypto_events (coin_id, coin_name, symbol, price_usd, fetched_at)
-#     VALUES ('bitcoin', 'Bitcoin', 'BTC', 77063.0, '2026-05-22 10:00:01')
-#     ON CONFLICT (coin_id, fetched_at) DO NOTHING  ← skips duplicates
-#     ... repeat for ethereum, solana, dogecoin, ripple
-# - conn.commit() → permanently saves all 5 rows
-# - outlets=[crypto_dataset] fires →
-#     Airflow marks postgres://data_platform/crypto_events as updated →
-#     analytics_dag triggers automatically (event-driven)
-#       |
-#       ↓
-# check_db_connection  ← Task 9 (SqlSensor)
-# - runs: SELECT 1 FROM crypto_events LIMIT 1
-# - row returned → data confirmed in DB → PASS
-# - empty result → pokes every 30s → timeout 300s → FAILED
-#       |
-#       ↓
-# log_pipeline_status  ← Task 10 (PythonOperator)
-# - pulls rows count from XCom (from fetch_crypto_prices)
-#     rows = context['ti'].xcom_pull(task_ids='fetch_crypto_prices')
-#     rows = 5
-# - writes to pipeline_logs table:
-#     INSERT INTO pipeline_logs
-#     VALUES ('ingest_dag', 'fetch_crypto_prices', 'success', 5)
-#       |
-#       ↓
-# DONE ✓ — DAG run marked SUCCESS in Airflow UI
-#
-# ── IF ANY TASK FAILS ──────────────────────────────────────
-# → retries=3: retry 3 times (wait 10s between each)
-# → after 3 retries still failing → FAILED (red in UI)
-# → alert_on_failure() called → logs error message
-# → email sent to arishmahammad8@gmail.com
-# → sla=10min: if DAG takes longer than 10 min → SLA alert
-#
-# ── PARALLEL ANALYTICS FLOW (auto-triggered) ───────────────
-# save_prices_to_db succeeds
-#       |
-#       | (outlets=[crypto_dataset] fires)
-#       ↓
-# analytics_dag triggers automatically
-#       |
-#       ↓
-# calculate_analytics  ← Task 1
-# - connects via PostgresHook
-# - runs: SELECT coin_id, AVG(price_usd), MAX(price_usd),
-#                MIN(price_usd), COUNT(*) FROM crypto_events
-#         GROUP BY coin_id ORDER BY avg_price DESC
-# - logs results:
-#     bitcoin  — Avg: $73,524 | Max: $77,709 | Records: 23
-#     ethereum — Avg: $2,079  | Max: $2,133  | Records: 23
-#     ...
-#       |
-#       ↓
-# DONE ✓

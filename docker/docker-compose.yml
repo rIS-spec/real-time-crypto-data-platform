@@ -49,12 +49,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # ───────────────────────────────────────────
   # 2. ZOOKEEPER — Kafka's manager
   # Kafka REQUIRES Zookeeper to run.
   # Zookeeper tracks which Kafka brokers are alive.
   # You never interact with Zookeeper directly in code.
-  # ───────────────────────────────────────────
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0  # Confluent's production-grade Zookeeper
     container_name: zookeeper

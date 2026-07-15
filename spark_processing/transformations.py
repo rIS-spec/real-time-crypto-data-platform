@@ -1,16 +1,7 @@
 # PURPOSE: PySpark batch transformations on crypto price data
-# also Phase 2 + 3 work
 # Reads crypto_events from PostgreSQL, applies filter, groupBy, aggregations, window functions (rank, lag, row_number). Saves results to crypto_aggregations table.
 # Example use: "Find average price per coin, rank coins by price, calculate price change from previous row"
 
-# BEFORE RUNNING — set these in PowerShell
-
-# $env:JAVA_TOOL_OPTIONS = "-Duser.timezone=UTC"
-# $env:HADOOP_HOME = "C:\hadoop"
-# $env:PATH = "$env:PATH;C:\hadoop\bin"
-# $env:PYTHONPATH = "C:\Users\arish\Desktop\real-time-data-platform"
-
-# Then run: python spark_processing/transformations.py
 
 
 from pyspark.sql import SparkSession
@@ -211,69 +202,3 @@ if __name__ == "__main__":
 #                 ↓
 #         crypto_aggregations table
 
-
-
-
-
-
-
-# CoinGecko API sends live crypto prices
-#    ↓
-# FastAPI (api_service/main.py) receives request
-#    ↓
-# fetch_crypto() called → prices fetched from CoinGecko
-#    ↓
-# Kafka Producer (kafka_service/producer.py) runs
-#    ↓
-# Each coin price sent as message to crypto-events topic
-#    ↓
-# Kafka Topic (crypto-events) stores messages in order
-#    ↓
-# Kafka Consumer (kafka_service/consumer.py) reads messages
-#    ↓
-# Each message saved as a row in PostgreSQL → crypto_events table
-#    ↓
-# THIS FILE runs — spark_processing/transformations.py
-#    ↓
-# PySpark reads crypto_events → runs transformations
-#    ↓
-# Results saved to PostgreSQL → crypto_aggregations table
-#    ↓
-# Streamlit Dashboard (Month 3) reads crypto_aggregations
-#    ↓
-# Live charts, price categories, anomaly alerts shown
-#
- 
-# ─── THIS FILE WORKFLOW (transformations.py) 
-#
-# python transformations.py
-#    ↓
-# create_spark_session() runs
-#    ↓
-# Spark starts on local[*] — use all CPU cores
-#    ↓
-# read_crypto_from_postgres() runs
-#    ↓
-# Spark connects to PostgreSQL via JDBC
-#    ↓
-# 40 rows loaded into DataFrame
-#    ↓
-# filter_high_value_coins() runs
-#    ↓
-# Removes coins where price_usd < 1.0 (Dogecoin filtered out)
-#    ↓
-# average_price_per_coin() runs
-#    ↓
-# Groups by coin_id → AVG, MAX, MIN, COUNT calculated
-#    ↓
-# add_price_category() runs
-#    ↓
-# New column added → HIGH / MID / LOW label per coin
-#    ↓
-# write_aggregations_to_postgres() runs
-#    ↓
-# avg_df saved to crypto_aggregations table (mode=overwrite)
-#    ↓
-# spark.stop() — Spark shuts down cleanly
-#    ↓
-# Done!

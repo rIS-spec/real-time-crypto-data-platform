@@ -1,4 +1,3 @@
-
 # Producer configs → sending logic to Kafka topic
 # Consumer configs → reading logic,
 #            and saves to PostgreSQL
@@ -121,45 +120,3 @@ def consume_crypto_from_kafka():
 
 if __name__ == "__main__":
     consume_crypto_from_kafka()
-
-
-
-
-
-
-# Run file
-#    ↓
-# Create Kafka consumer (connect to Kafka)
-#    ↓
-# Connect to PostgreSQL
-#    ↓
-# Start listening to Kafka topic
-#    ↓
-# Message arrives
-#    ↓
-# Convert bytes → JSON → dict
-#    ↓
-# Try inserting into DB
-#    ↓
-# If fail → retry 3 times
-#    ↓
-# If success → commit
-#    ↓
-# Repeat forever
-
-
-
-
-
-
-# CoinGecko API
-#       ↓
-# FastAPI (fetch)
-#       ↓
-# Kafka Producer (send)
-#       ↓
-# Kafka Topic (crypto-events)
-#       ↓
-# Kafka Consumer (read)
-#       ↓
-# PostgreSQL (store)

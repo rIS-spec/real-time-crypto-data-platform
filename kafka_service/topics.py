@@ -1,5 +1,4 @@
 # PURPOSE: Creates Kafka topics (mailboxes) for our platform
-# File: kafka/topics.py
 
 # producer.py  = reporter writes news article
 # "crypto-events" topic = the mailbox
@@ -70,42 +69,3 @@ def create_kafka_topics():
 
 if __name__ == "__main__":
     create_kafka_topics()
-
-
-
-
-# File runs
-#    ↓
-# Required tools imported (KafkaAdminClient, logging, settings)
-#    ↓
-# Settings loaded from config.py (.env values)
-#    ↓
-# Logger initialized (for tracking execution)
-#    ↓
-# Main function create_kafka_topics() called
-#    ↓
-# Try block starts (for safe execution)
-#    ↓
-# Connect to Kafka broker (localhost:9092)
-#    ↓
-# Fetch existing topics from Kafka
-#    ↓
-# Check: Does "crypto-events" topic already exist?
-#       ↓
-#       YES → Log "Topic already exists" and skip creation
-#       ↓
-#       NO  → Create new topic with:
-#               - 1 partition
-#               - replication factor = 1
-#    ↓
-# Send topic creation request to Kafka
-#    ↓
-# Log success message in terminal
-#    ↓
-# Handle edge cases:
-#       - TopicAlreadyExistsError (race condition)
-#       - General exceptions (Kafka down, network error)
-#    ↓
-# If error occurs → log error and raise exception
-#    ↓
-# Execution completes safely

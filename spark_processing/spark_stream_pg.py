@@ -124,18 +124,3 @@ query = parsed_stream.writeStream \
 
 # step 7 — awaitTermination
 query.awaitTermination()
-
-
-
-
-
-# What it does:
-# 1. Creates SparkSession with Kafka + JDBC
-# 2. Uses readStream to read from Kafka continuously
-# 3. Parses JSON → DataFrame
-# 4. Uses foreachBatch() to process each micro-batch
-# 5. Each batch written to streaming_results table in PostgreSQL
-# 6. Runs forever until manually stopped
-
-# Flow:
-# Kafka → Spark Streaming → foreachBatch() → PostgreSQL

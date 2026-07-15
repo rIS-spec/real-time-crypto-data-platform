@@ -74,31 +74,3 @@ def main_pipeline():
 # Without this line, Airflow cannot see the DAG
 main_pipeline()
 
-
-
-
-
-
-
-# AIRFLOW SCHEDULER
-#       |
-#       | (every hour automatically)
-#       ↓
-#   main_pipeline()   ← this is your DAG
-#       |
-#       ↓
-#   fetch_prices()    ← Task 1
-#   - calls CoinGecko API
-#   - gets 5 coins
-#   - returns 5
-#       |
-#       | (passes 5 via XCom automatically)
-#       ↓
-#   log_status(5)     ← Task 2
-#   - receives 5
-#   - writes to PostgreSQL:
-#     "main_pipeline ran, 5 rows processed, success"
-#       |
-#       ↓
-#   DONE 
-
