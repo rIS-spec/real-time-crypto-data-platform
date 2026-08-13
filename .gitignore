@@ -1,11 +1,30 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+
+# Secrets
 .env
-.git/
-docker/
-*.md
 .streamlit/secrets.toml
+
+# Git
+.git/
+
+# Logs
+*.log
+logs/
+
+# Generated files
+a.out
+spark_output/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local revision/demo files
 spark_processing/revision_day23.py
 spark_processing/revision_day24.py
 spark_processing/revision_day25.py
