@@ -2,21 +2,6 @@
 # ingest_dag.py = old style car (manual gear, more steps)
 # main_pipeline_dag.py = new style car (automatic, less steps, same destination)
 
-# Both files schedule the same crypto pipeline — but main_pipeline_dag.py is cleaner, less code
-
-
-# Step 1 — fetch_prices()
-#          Fetch live crypto prices from CoinGecko
-#          Returns list of coin data
-
-# Step 2 — log_status(row_count)
-#          Receives the count from Step 1 via XCom (automatically)
-#          Writes pipeline log to PostgreSQL
-
-# Dependencies:
-#          fetch_prices() >> log_status()
-
-
 
 from airflow.decorators import dag, task
 from datetime import datetime
@@ -48,9 +33,8 @@ def main_pipeline():
     @task
     # Step 2 — log_status(row_count)
     def log_status(row_count):
-        from airflow.providers.postgres.hooks.postgres import PostgresHook
-        hook = PostgresHook(postgres_conn_id='crypto_postgres')
-        conn = hook.get_conn()
+        import psycopg2
+        conn = psycopg2.connect("postgresql://arish:Arish200502@postgres:5432/data_platform")
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO pipeline_logs (pipeline_name, task_name, status, rows_processed)
@@ -73,4 +57,32 @@ def main_pipeline():
 # Registers the DAG with Airflow
 # Without this line, Airflow cannot see the DAG
 main_pipeline()
+
+
+
+
+
+
+
+# AIRFLOW SCHEDULER
+#       |
+#       | (every hour automatically)
+#       ↓
+#   main_pipeline()   ← this is your DAG
+#       |
+#       ↓
+#   fetch_prices()    ← Task 1
+#   - calls CoinGecko API
+#   - gets 5 coins
+#   - returns 5
+#       |
+#       | (passes 5 via XCom automatically)
+#       ↓
+#   log_status(5)     ← Task 2
+#   - receives 5
+#   - writes to PostgreSQL:
+#     "main_pipeline ran, 5 rows processed, success"
+#       |
+#       ↓
+#   DONE 
 

@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 spark = SparkSession.builder \
     .appName("CryptoStreamToPostgres") \
     .config("spark.jars", "spark_processing/postgresql-42.7.3.jar") \
-    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.0") \
+    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1") \
     .getOrCreate()   # Create new SparkSession or reuse existing one, if it exists.
 
 spark.sparkContext.setLogLevel("WARN")

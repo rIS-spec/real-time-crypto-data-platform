@@ -39,6 +39,18 @@ def root():
     }
 
 
+from datetime import datetime  # Add this to your imports at the top
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Docker and monitoring."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "Crypto Data Platform"
+    }
+
+
 # step 2 — Add startup and shutdown events for logging
 @app.on_event("startup")
 async def startup_event():    # called when server starts up automatically by uvicorn, async = non-blocking I/O from the OS kernel to run in the background without blocking the main thread of execution 

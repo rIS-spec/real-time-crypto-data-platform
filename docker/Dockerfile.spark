@@ -1,0 +1,14 @@
+FROM apache/spark-py:latest
+
+USER root
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --timeout 1000 -r requirements.txt
+
+COPY spark_processing/ ./spark_processing/
+
+CMD ["/opt/spark/bin/spark-submit", "--packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0", "spark_processing/consumer.py"]
+

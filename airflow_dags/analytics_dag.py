@@ -6,14 +6,6 @@
 #            → calculate_analytics() runs
 #            → logs avg/max/min per coin
 
-# Step 1 — Imports + Dataset definition Done
-# Define the same crypto_dataset URI so Airflow knows which dataset to listen for.
-# Step 2 — Write analytics function ← We are here
-# calculate_analytics() — connects to PostgreSQL via Hook, runs SQL to calculate average, max, min price per coin, logs results.
-# Step 3 — Define the DAG
-# Create a DAG with schedule=[crypto_dataset] instead of a cron expression. This tells Airflow — "don't run on a timer, run when crypto_dataset is updated."
-
-
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.datasets import Dataset

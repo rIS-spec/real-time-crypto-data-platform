@@ -1,1 +1,13 @@
- 
+venv/
+data/
+logs/
+__pycache__/
+*.pyc
+*.log
+*.out
+.git/
+.gitignore
+*.md
+.env
+project_screenshots/
+spark_output/

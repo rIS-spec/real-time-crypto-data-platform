@@ -27,8 +27,6 @@ volumes:
 services:
 
   # 1. POSTGRESQL — Your data warehouse
-  # Stores all processed analytics data.
-  # You connect to this from Python using psycopg2 or SQLAlchemy.
   postgres:
     image: postgres:15
     container_name: postgres_db
@@ -49,10 +47,8 @@ services:
       timeout: 5s
       retries: 5
 
+
   # 2. ZOOKEEPER — Kafka's manager
-  # Kafka REQUIRES Zookeeper to run.
-  # Zookeeper tracks which Kafka brokers are alive.
-  # You never interact with Zookeeper directly in code.
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0  # Confluent's production-grade Zookeeper
     container_name: zookeeper
@@ -72,9 +68,6 @@ services:
 
 
   # 3. KAFKA — Your streaming conveyor belt
-  # Receives events from your producer.py
-  # and delivers them to your consumer.py.
-  # Must start AFTER Zookeeper (see depends_on).
   kafka:
     image: confluentinc/cp-kafka:7.4.0  # Same version family as Zookeeper
     container_name: kafka_broker
@@ -103,9 +96,6 @@ services:
 
 
   # 4. KAFKA UI — Visual dashboard for Kafka
-  # Optional but VERY useful for debugging.
-  # See your topics, messages, consumer groups
-  # at http://localhost:8090 in your browser.
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka_ui
@@ -124,51 +114,122 @@ services:
 
 
   # 5. APACHE AIRFLOW — Your pipeline scheduler
-  # Runs your DAGs on schedule.
-  # Access the UI at http://localhost:8080
-  # Default login: admin / admin
   airflow:
     image: apache/airflow:2.8.0
     container_name: airflow
     restart: unless-stopped
     depends_on:
       postgres:
-        condition: service_healthy   # Airflow stores its metadata in PostgreSQL database then starts up 
+        condition: service_healthy
     environment:
       AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
       AIRFLOW__SMTP__SMTP_USER: arishmahammad8@gmail.com
-      AIRFLOW__SMTP__SMTP_PASSWORD: lbwcsttdvrhjgnql
+      AIRFLOW__SMTP__SMTP_PASSWORD: ${AIRFLOW_SMTP_PASSWORD}
       AIRFLOW__SMTP__SMTP_PORT: 587
       AIRFLOW__SMTP__SMTP_MAIL_FROM: your_gmail@gmail.com
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://arish:Arish200502@postgres/data_platform
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW_DATABASE_URL}
       AIRFLOW__CORE__FERNET_KEY: ''
-      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'   # Hides the built-in example DAGs
-      AIRFLOW__CORE__PARALLELISM: '32'      # Maximum 32 tasks running simultaneously across all DAGs in entire Airflow
-      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: '3'   # Maximum 3 runs of the same DAG running simultaneously — prevents overlap
-      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: '16'   # Maximum 16 tasks running simultaneously within one DAG run
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__PARALLELISM: '32'
+      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: '3'
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: '16'
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
     volumes:
-      - ./airflow_dags:/opt/airflow/dags  # Airflow looks for your DAGs here on your local machine 
+      - ./airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
-      - ./airflow_start.sh:/airflow_start.sh
+      # - ./airflow_start.sh:/airflow_start.sh   # ← REMOVE THIS LINE
     ports:
       - "8080:8080"
-    command: bash /airflow_start.sh
     networks:
       - data_platform_net
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
+      airflow webserver --port 8080 &
+      airflow scheduler
+      "
+
+    # 6. FASTAPI — Your Crypto Data Producer
+  fastapi:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: fastapi
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: 5432
+    ports:
+      - "8000:8000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - data_platform_net
+    volumes:
+      - ./api_service:/app/api_service
+      - ./logs:/app/logs
 
 
+  # 7. SPARK — Your PySpark Consumer
+  spark:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.spark
+    container_name: spark_consumer
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: 5432
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_platform_net
+    volumes:
+      - ./spark_processing:/app/spark_processing
+      - ./data:/app/data
 
-# HOW TO USE THIS FILE
 
-# Start all services:       docker-compose up -d
-# Check status:             docker-compose ps
-# View logs of one service: docker-compose logs kafka
-# Stop all services:        docker-compose down
-# Stop + delete all data:   docker-compose down -v   <- WARNING: deletes DB data
-#
-# After running up -d, wait ~30 seconds then open:
-#   PostgreSQL:  connect via DBeaver at localhost:5432
-#   Kafka UI:    http://localhost:8090
-#   Airflow UI:  http://localhost:8080  (login: admin / admin)
+  # 8. STREAMLIT — Your Dashboard
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    container_name: streamlit_dashboard
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: 5432
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data_platform_net
+    volumes:
+      - ./dashboard:/app/dashboard
