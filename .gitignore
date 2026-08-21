@@ -24,6 +24,12 @@ Thumbs.db
 .vscode/
 .idea/
 
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+terraform.exe
+
 # Local revision/demo files
 spark_processing/revision_day23.py
 spark_processing/revision_day24.py
