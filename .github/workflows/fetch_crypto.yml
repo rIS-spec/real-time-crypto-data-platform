@@ -1,0 +1,30 @@
+name: Fetch Crypto Prices to Neon
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  fetch-and-store:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install requests psycopg2-binary pydantic pydantic-settings python-dotenv
+
+      - name: Run fetch_and_store.py
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python cloud_pipeline/fetch_and_store.py
