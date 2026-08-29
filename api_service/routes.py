@@ -21,7 +21,8 @@ def health_check():
         conn = psycopg2.connect(settings.POSTGRES_URL)
         conn.close()
         db_status = "connected"
-    except Exception:
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
         db_status = "disconnected"
 
     return {

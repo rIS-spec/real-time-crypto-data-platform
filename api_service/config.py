@@ -4,6 +4,7 @@ from pydantic import field_validator, model_validator, computed_field
 from typing import Literal
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from urllib.parse import quote_plus
 
 class Settings(BaseSettings):
     # PostgreSQL
@@ -32,7 +33,14 @@ class Settings(BaseSettings):
     @property
     def POSTGRES_URL(self) -> str:
         """Build PostgreSQL URL from individual components."""
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=require"
+        user = quote_plus(self.POSTGRES_USER)
+        password = quote_plus(self.POSTGRES_PASSWORD)
+
+        return (
+            f"postgresql://{user}:{password}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}"
+            f"/{self.POSTGRES_DB}?sslmode=require"
+        )
 
     class Config:
         env_file = ".env"
