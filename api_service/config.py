@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     @property
     def POSTGRES_URL(self) -> str:
         """Build PostgreSQL URL from individual components."""
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}?sslmode=require"
 
     class Config:
         env_file = ".env"
