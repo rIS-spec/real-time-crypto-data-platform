@@ -1,5 +1,4 @@
 # PURPOSE: Main entry point for the Crypto Dashboard
-
 import streamlit as st
 
 

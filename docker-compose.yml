@@ -233,3 +233,4 @@ services:
       - data_platform_net
     volumes:
       - ./dashboard:/app/dashboard
+      - ./.streamlit:/app/.streamlit

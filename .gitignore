@@ -39,3 +39,5 @@ spark_processing/revision_day27.py
 spark_processing/revision_day28.py
 spark_processing/spark_sql_demo.py
 spark_processing/performance_demo.py
+.env.cloud 
+docker/.streamlit/ 

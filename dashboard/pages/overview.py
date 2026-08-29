@@ -34,7 +34,7 @@ def fetch_latest_prices():
 
 
 st.subheader("Latest Crypto Prices")
-df = fetch_latest_prices()
+df["fetched_at"] = pd.to_datetime(df["fetched_at"])
 st.dataframe(df, use_container_width=True)
 
 
@@ -127,7 +127,8 @@ elif time_filter == "Last 24 Hours":
 else:
     df_filtered = df
 
-stats_df = df.groupby("symbol")["price_usd"].agg(["min", "max", "mean"]).reset_index()
+stats_df = df_filtered.groupby("symbol")["price_usd"].agg(["min", "max", "mean"]).reset_index()
+
 stats_df.columns = ["Symbol", "Min Price", "Max Price", "Avg Price"]
 stats_df = stats_df.round(2)
 st.dataframe(
