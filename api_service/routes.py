@@ -20,17 +20,24 @@ def health_check():
     try:
         conn = psycopg2.connect(settings.POSTGRES_URL)
         conn.close()
-        db_status = "connected"
+
+        return {
+            "status": "ok",
+            "service": "crypto-api",
+            "database": "connected",
+            "kafka": settings.KAFKA_BOOTSTRAP_SERVERS
+        }
+
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
-        db_status = "disconnected"
 
-    return {
-        "status": "ok",
-        "service": "crypto-api",
-        "database": db_status,
-        "kafka": settings.KAFKA_BOOTSTRAP_SERVERS
-    }
+        return {
+            "status": "ok",
+            "service": "crypto-api",
+            "database": "disconnected",
+            "error": str(e),
+            "kafka": settings.KAFKA_BOOTSTRAP_SERVERS
+        }
 
 
 @router.get("/prices", response_model=CryptoPriceResponse)
