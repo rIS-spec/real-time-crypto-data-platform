@@ -38,19 +38,6 @@ def health_check():
         }
 
 
-@router.get("/debug-env")
-def debug_env():
-    return {
-        "host": repr(settings.POSTGRES_HOST),
-        "host_length": len(settings.POSTGRES_HOST),
-        "user": repr(settings.POSTGRES_USER),
-        "password_length": len(settings.POSTGRES_PASSWORD),
-        "password_first_char": settings.POSTGRES_PASSWORD[0] if settings.POSTGRES_PASSWORD else None,
-        "password_last_char": settings.POSTGRES_PASSWORD[-1] if settings.POSTGRES_PASSWORD else None,
-        "db": repr(settings.POSTGRES_DB),
-        "port": settings.POSTGRES_PORT,
-    }
-
 
 @router.get("/prices", response_model=CryptoPriceResponse)
 def get_live_prices():
