@@ -9,15 +9,17 @@ import os
 
 
 def get_engine():
-    # Reads connection details from environment variables instead of
-    # api_service.config, so this page doesn't need PYTHONPATH set up
-    # to find the api_service package on Render.
-    user = quote_plus(os.environ["POSTGRES_USER"])
-    password = quote_plus(os.environ["POSTGRES_PASSWORD"])
-    host = os.environ["POSTGRES_HOST"]
-    port = os.environ.get("POSTGRES_PORT", "5432")
-    db = os.environ["POSTGRES_DB"]
-    url = f"postgresql://{user}:{password}@{host}:{port}/{db}?sslmode=require"
+    db = st.secrets["database"]
+
+    user = quote_plus(db["user"])
+    password = quote_plus(db["password"])
+
+    url = (
+        f"postgresql+psycopg2://{user}:{password}"
+        f"@{db['host']}:{db['port']}/{db['database']}"
+        f"?sslmode=require"
+    )
+
     return create_engine(url)
 
 

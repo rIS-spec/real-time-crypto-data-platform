@@ -8,15 +8,16 @@ import os
 
 
 def get_connection():
+    db = st.secrets["database"]
+
     return psycopg2.connect(
-        host=os.environ["POSTGRES_HOST"],
-        port=os.environ.get("POSTGRES_PORT", "5432"),
-        dbname=os.environ["POSTGRES_DB"],
-        user=os.environ["POSTGRES_USER"],
-        password=os.environ["POSTGRES_PASSWORD"],
+        host=db["host"],
+        port=db["port"],
+        dbname=db["database"],
+        user=db["user"],
+        password=db["password"],
         sslmode="require"
     )
-
 
 st.title("📊 Market Overview")
 
