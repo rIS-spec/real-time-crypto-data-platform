@@ -1,19 +1,31 @@
-
-# ml_predictions table → load data → show anomaly chart → highlight red dots → show anomaly table
-
+# ml_predictions table -> load data -> show anomaly chart -> highlight red dots -> show anomaly table
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine
-from api_service.config import settings
+from urllib.parse import quote_plus
+import os
+
+
+def get_engine():
+    # Reads connection details from environment variables instead of
+    # api_service.config, so this page doesn't need PYTHONPATH set up
+    # to find the api_service package on Render.
+    user = quote_plus(os.environ["POSTGRES_USER"])
+    password = quote_plus(os.environ["POSTGRES_PASSWORD"])
+    host = os.environ["POSTGRES_HOST"]
+    port = os.environ.get("POSTGRES_PORT", "5432")
+    db = os.environ["POSTGRES_DB"]
+    url = f"postgresql://{user}:{password}@{host}:{port}/{db}?sslmode=require"
+    return create_engine(url)
 
 
 st.set_page_config(page_title="Anomaly Detection", page_icon="🚨")
 st.title("🚨 Anomaly Detection")
 st.markdown("Isolation Forest model detecting unusual crypto price movements.")
 
-engine = create_engine(settings.POSTGRES_URL)
+engine = get_engine()
 
 query = """
     SELECT coin_id, price_usd, prediction, confidence, is_anomaly, predicted_at
@@ -31,23 +43,26 @@ summary["anomaly_pct"] = (summary["anomalies"] / summary["total"] * 100).round(2
 st.dataframe(summary, use_container_width=True)
 
 st.subheader("Price Chart with Anomalies Highlighted")
-coin = st.selectbox("Select Coin", df["coin_id"].unique())
-coin_df = df[df["coin_id"] == coin].copy()
-coin_df["color"] = coin_df["is_anomaly"].map({True: "Anomaly", False: "Normal"})
+if df.empty or df["coin_id"].nunique() == 0:
+    st.warning("No prediction data found yet — run the ML prediction script to populate ml_predictions.")
+else:
+    coin = st.selectbox("Select Coin", df["coin_id"].unique())
+    coin_df = df[df["coin_id"] == coin].copy()
+    coin_df["color"] = coin_df["is_anomaly"].map({True: "Anomaly", False: "Normal"})
 
-fig = px.scatter(
-    coin_df,
-    x="predicted_at",
-    y="price_usd",
-    color="color",
-    color_discrete_map={"Anomaly": "red", "Normal": "green"},
-    title=f"{coin.capitalize()} Price — Anomalies in Red",
-    labels={"predicted_at": "Time", "price_usd": "Price (USD)"}
-)
-st.plotly_chart(fig, use_container_width=True)
+    fig = px.scatter(
+        coin_df,
+        x="predicted_at",
+        y="price_usd",
+        color="color",
+        color_discrete_map={"Anomaly": "red", "Normal": "green"},
+        title=f"{coin.capitalize()} Price — Anomalies in Red",
+        labels={"predicted_at": "Time", "price_usd": "Price (USD)"}
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Anomaly Details")
-anomalies_only = coin_df[coin_df["is_anomaly"] == True][
-    ["coin_id", "price_usd", "confidence", "predicted_at"]
-].reset_index(drop=True)
-st.dataframe(anomalies_only, use_container_width=True)
+    st.subheader("Anomaly Details")
+    anomalies_only = coin_df[coin_df["is_anomaly"] == True][
+        ["coin_id", "price_usd", "confidence", "predicted_at"]
+    ].reset_index(drop=True)
+    st.dataframe(anomalies_only, use_container_width=True)

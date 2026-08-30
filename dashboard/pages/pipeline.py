@@ -3,15 +3,16 @@
 import streamlit as st
 import psycopg2
 import pandas as pd
+import os
 
 def get_connection():
-    db = st.secrets["database"]
     return psycopg2.connect(
-        host=db["host"],
-        port=db["port"],
-        database=db["database"],
-        user=db["user"],
-        password=db["password"]
+        host=os.environ["POSTGRES_HOST"],
+        port=os.environ.get("POSTGRES_PORT", "5432"),
+        dbname=os.environ["POSTGRES_DB"],
+        user=os.environ["POSTGRES_USER"],
+        password=os.environ["POSTGRES_PASSWORD"],
+        sslmode="require"
     )
 
 
@@ -74,6 +75,3 @@ def color_status(val):
 
 styled_df = filtered_df.style.applymap(color_status, subset=["status"])
 st.dataframe(styled_df, use_container_width=True)
-
-
-

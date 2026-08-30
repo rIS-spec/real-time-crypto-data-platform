@@ -4,20 +4,22 @@ import streamlit as st
 import psycopg2
 import pandas as pd
 import plotly.express as px
+import os
 
 
 def get_connection():
-    db = st.secrets["database"]
     return psycopg2.connect(
-        host=db["host"],
-        port=db["port"],
-        database=db["database"],
-        user=db["user"],
-        password=db["password"]
+        host=os.environ["POSTGRES_HOST"],
+        port=os.environ.get("POSTGRES_PORT", "5432"),
+        dbname=os.environ["POSTGRES_DB"],
+        user=os.environ["POSTGRES_USER"],
+        password=os.environ["POSTGRES_PASSWORD"],
+        sslmode="require"
     )
 
 
 st.title("📊 Market Overview")
+
 
 def fetch_latest_prices():
     conn = get_connection()
@@ -34,6 +36,7 @@ def fetch_latest_prices():
 
 
 st.subheader("Latest Crypto Prices")
+df = fetch_latest_prices()
 df["fetched_at"] = pd.to_datetime(df["fetched_at"])
 st.dataframe(df, use_container_width=True)
 
@@ -64,7 +67,6 @@ if search:
         st.dataframe(search_df, use_container_width=True)
     else:
         st.warning(f"No coin found for: {search}")
-
 
 
 st.subheader("Price Comparison Chart")
@@ -112,7 +114,6 @@ else:
     st.warning("No price history found for this coin.")
 
 
-
 st.subheader("Price Statistics")
 time_filter = st.selectbox(
     "Select time range",
@@ -128,7 +129,6 @@ else:
     df_filtered = df
 
 stats_df = df_filtered.groupby("symbol")["price_usd"].agg(["min", "max", "mean"]).reset_index()
-
 stats_df.columns = ["Symbol", "Min Price", "Max Price", "Avg Price"]
 stats_df = stats_df.round(2)
 st.dataframe(
