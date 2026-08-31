@@ -35,6 +35,7 @@ query = """
     ORDER BY predicted_at ASC
 """
 df = pd.read_sql(query, engine)
+df["is_anomaly"] = df["is_anomaly"].fillna(False).astype(int)
 
 st.subheader("Anomaly Summary by Coin")
 summary = df.groupby("coin_id").agg(
